@@ -7,6 +7,7 @@
     "type": "module",
     "scripts": {
         "build": "tsc -b && ncc build out/index.js -o dist",
+        "release": "pnpm build && git add . && git commit -m \"build: update dist bundle\" && git push",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": {

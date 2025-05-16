@@ -27441,7 +27441,7 @@ const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(impo
 
 
 
-const binaries = [
+const BINARIES = [
     "linux-arm",
     "linux-arm64",
     "linux-amd64",
@@ -27450,6 +27450,35 @@ const binaries = [
     "windows-arm64",
     "windows-amd64",
 ];
+const GOARM_VERSION = 7;
+const DEFAULT_VERSION = "v0.0.0";
+async function execAndExtractOutput(cmd) {
+    let result = "";
+    await (0,exec.exec)(cmd, [], {
+        listeners: {
+            stdout(data) {
+                result += data.toString().trim();
+            },
+        },
+    });
+    return result;
+}
+async function getLatestTagOrCommit() {
+    let result = DEFAULT_VERSION;
+    try {
+        result = await execAndExtractOutput(`git describe --tags --always --abbrev=0`);
+        return result;
+    }
+    catch {
+        try {
+            result = await execAndExtractOutput(`git rev-parse --short HEAD`);
+            return result;
+        }
+        finally {
+            return result;
+        }
+    }
+}
 async function build() {
     try {
         let projectName = core.getInput("name");
@@ -27463,10 +27492,10 @@ async function build() {
             core.info(`creating output directory: ${outputDir}`);
             external_node_fs_namespaceObject.mkdirSync(outputDir, { recursive: true });
         }
-        const projectVersion = await (0,exec.exec)("git describe --tags --always");
-        for (const bin of binaries) {
+        const projectVersion = await getLatestTagOrCommit();
+        for (const bin of BINARIES) {
             const [goos, goarch] = bin.split("-");
-            const goarm = goarch === "arm" ? "GOARM=7" : "";
+            const goarm = goarch === "arm" ? `GOARM=${GOARM_VERSION}` : "";
             const isWindows = goos === "windows";
             const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
             const outputName = external_node_path_namespaceObject.relative(".", external_node_path_namespaceObject.join(outputDir, binName + (isWindows ? ".exe" : "")));
