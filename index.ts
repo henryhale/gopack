@@ -39,19 +39,19 @@ async function build() {
         const projectVersion = await exec("git describe --tags --always");
 
         // start building binaries
-        for await (const bin of binaries) {
+        for (const bin of binaries) {
             const [goos, goarch] = bin.split("-");
             const goarm = goarch === "arm" ? "GOARM=7" : "";
             const isWindows = goos === "windows";
 
             const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
-            const outputName = path.join(
-                outputDir,
-                binName + (isWindows ? ".exe" : ""),
+            const outputName = path.relative(
+                ".",
+                path.join(outputDir, binName + (isWindows ? ".exe" : "")),
             );
-            const archiveName = path.join(
-                outputDir,
-                binName + (isWindows ? ".zip" : ""),
+            const archiveName = path.relative(
+                ".",
+                path.join(outputDir, binName + (isWindows ? ".zip" : "")),
             );
 
             // build
@@ -59,7 +59,7 @@ async function build() {
                 `env GOOS=${goos} GOARCH=${goarch} ${goarm} go build -ldflags "${ldFlags}" -o "${outputName}"`,
             );
 
-            // acrhive
+            // archive
             if (goos === "windows") {
                 await exec(`zip -j ${archiveName} ${outputName}`);
             } else {
