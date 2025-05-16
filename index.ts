@@ -72,6 +72,9 @@ async function build() {
 
         core.info(`build and packaging complete.`);
         core.info(`artifacts in ${outputDir}/`);
+
+        // display binaries
+        await exec(`ls -lh ${outputDir}`);
     } catch (error) {
         core.setFailed(`action failed with error: ${error}`);
     }
