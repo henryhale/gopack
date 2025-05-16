@@ -51,7 +51,10 @@ async function build() {
             );
             const archiveName = path.relative(
                 ".",
-                path.join(outputDir, binName + (isWindows ? ".zip" : "")),
+                path.join(
+                    outputDir,
+                    binName + (isWindows ? ".zip" : ".tar.gz"),
+                ),
             );
 
             // build
