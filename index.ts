@@ -45,10 +45,14 @@ async function build() {
             const isWindows = goos === "windows";
 
             const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
-            const outputName =
-                outputDir + "/" + binName + (isWindows ? ".exe" : "");
-            const archiveName =
-                outputDir + "/" + binName + (isWindows ? ".zip" : "");
+            const outputName = path.join(
+                outputDir,
+                binName + (isWindows ? ".exe" : ""),
+            );
+            const archiveName = path.join(
+                outputDir,
+                binName + (isWindows ? ".zip" : ""),
+            );
 
             // build
             await exec(
