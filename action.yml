@@ -1,23 +1,23 @@
-name: 'gopack: build and package golang projects'
-description: 'Builds and packages a golang project, outputting the binaries for multiple platforms.'
-author: 'Henry Hale'
+name: "gopack: build and package golang projects"
+description: "Builds and packages a golang project, outputting the binaries for multiple platforms."
+author: "Henry Hale"
 inputs:
   name:
-    description: 'Name of the project'
+    description: "Name of the project"
     required: true
   path:
-    description: 'Path to the golang project (relative to the repository root).'
+    description: "Path to the golang project (relative to the repository root)."
     required: true
-    default: '.'
+    default: "."
   dest:
-    description: 'Directory where the built files will be placed.'
+    description: "Directory where the built files will be placed."
     required: false
-    default: './dist'
+    default: "./dist"
   ldflags:
-    description: 'Value to -ldflags build option.'
+    description: "Value to -ldflags build option."
     required: false
-    default: '-s -w'
+    default: "-s -w"
 
 runs:
-  using: 'node22'
-  main: './dist/index.js'
+  using: "node20"
+  main: "./dist/index.js"
