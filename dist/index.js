@@ -27464,13 +27464,13 @@ async function build() {
             external_node_fs_namespaceObject.mkdirSync(outputDir, { recursive: true });
         }
         const projectVersion = await (0,exec.exec)("git describe --tags --always");
-        for await (const bin of binaries) {
+        for (const bin of binaries) {
             const [goos, goarch] = bin.split("-");
             const goarm = goarch === "arm" ? "GOARM=7" : "";
             const isWindows = goos === "windows";
             const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
-            const outputName = outputDir + "/" + binName + (isWindows ? ".exe" : "");
-            const archiveName = outputDir + "/" + binName + (isWindows ? ".zip" : "");
+            const outputName = external_node_path_namespaceObject.relative(".", external_node_path_namespaceObject.join(outputDir, binName + (isWindows ? ".exe" : "")));
+            const archiveName = external_node_path_namespaceObject.relative(".", external_node_path_namespaceObject.join(outputDir, binName + (isWindows ? ".zip" : ".tar.gz")));
             await (0,exec.exec)(`env GOOS=${goos} GOARCH=${goarch} ${goarm} go build -ldflags "${ldFlags}" -o "${outputName}"`);
             if (goos === "windows") {
                 await (0,exec.exec)(`zip -j ${archiveName} ${outputName}`);
@@ -27482,6 +27482,7 @@ async function build() {
         }
         core.info(`build and packaging complete.`);
         core.info(`artifacts in ${outputDir}/`);
+        await (0,exec.exec)(`ls -lh ${outputDir}`);
     }
     catch (error) {
         core.setFailed(`action failed with error: ${error}`);
