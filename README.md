@@ -63,7 +63,7 @@ This action does not setup Go for you, use [actions/setup-go](https://github.com
 - implement change/bug fix/new feature in a new branch: `git checkout -b feat/xyz`
 - commit changes: `git commit ...`
 - build & update with: `pnpm release`
-- creating a new release: `git tag v0.0.0 && git push --tags origin v0.0.0`
+- creating a new release: `git tag v0.0.0 && git push --tags`
 
 ## license
 
