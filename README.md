@@ -52,7 +52,7 @@ jobs:
 
       # build with go
       - name: Build and package binaries 
-        uses: henryhale/gopack@v1
+        uses: henryhale/gopack@v1.0.2
         with:
           path: "./my-go-project"
           dest: "./dist"
