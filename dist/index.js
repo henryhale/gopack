@@ -27435,7 +27435,10 @@ const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import
 const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
 ;// CONCATENATED MODULE: external "node:path"
 const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
+;// CONCATENATED MODULE: external "node:process"
+const external_node_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:process");
 ;// CONCATENATED MODULE: ./out/index.js
+
 
 
 
@@ -27485,31 +27488,44 @@ async function build() {
         let projectPath = core.getInput("path");
         let outputDir = core.getInput("dest");
         const ldFlags = core.getInput("ldflags");
+        const flags = core.getInput("flags");
+        const checksumFile = core.getInput("checksum");
         projectPath = external_node_path_namespaceObject.resolve(projectPath);
-        outputDir = external_node_path_namespaceObject.resolve(outputDir);
+        outputDir = external_node_path_namespaceObject.relative(projectPath, outputDir);
+        external_node_process_namespaceObject.chdir(projectPath);
         core.info(`build: ${projectName} started...`);
         if (!external_node_fs_namespaceObject.existsSync(outputDir)) {
             core.info(`creating output directory: ${outputDir}`);
             external_node_fs_namespaceObject.mkdirSync(outputDir, { recursive: true });
         }
         const projectVersion = await getLatestTagOrCommit();
+        const builtBinaries = [];
         for (const bin of BINARIES) {
             const [goos, goarch] = bin.split("-");
             const goarm = goarch === "arm" ? `GOARM=${GOARM_VERSION}` : "";
             const isWindows = goos === "windows";
-            const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
-            const outputName = external_node_path_namespaceObject.relative(".", external_node_path_namespaceObject.join(outputDir, binName + (isWindows ? ".exe" : "")));
-            const archiveName = external_node_path_namespaceObject.relative(".", external_node_path_namespaceObject.join(outputDir, binName + (isWindows ? ".zip" : ".tar.gz")));
-            await (0,exec.exec)(`env GOOS=${goos} GOARCH=${goarch} ${goarm} go build -ldflags "${ldFlags}" -o "${outputName}"`);
-            if (goos === "windows") {
+            const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
+            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
+            const outputName = binName + (isWindows ? ".exe" : "");
+            const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
+            await (0,exec.exec)(`env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} ${goarm} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`);
+            builtBinaries.push([outputName, archiveName]);
+        }
+        core.info(`building complete.`);
+        external_node_process_namespaceObject.chdir(outputDir);
+        for (const bin of builtBinaries) {
+            const [outputName, archiveName] = bin;
+            if (archiveName.endsWith(".zip")) {
                 await (0,exec.exec)(`zip -j ${archiveName} ${outputName}`);
             }
             else {
                 await (0,exec.exec)(`tar -czf ${archiveName} ${outputName}`);
             }
+            const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`);
+            await promises_namespaceObject.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum);
             await promises_namespaceObject.rm(outputName);
         }
-        core.info(`build and packaging complete.`);
+        external_node_process_namespaceObject.chdir(projectPath);
         core.info(`artifacts in ${outputDir}/`);
         await (0,exec.exec)(`ls -lh ${outputDir}`);
     }
