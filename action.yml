@@ -7,7 +7,7 @@ inputs:
     required: true
   path:
     description: "Path to the golang project (relative to the repository root)."
-    required: true
+    required: false
     default: "."
   dest:
     description: "Directory where the built files will be placed."
@@ -17,6 +17,14 @@ inputs:
     description: "Value to -ldflags build option."
     required: false
     default: "-s -w"
+  flags:
+    description: "Flags to pass to 'go build' command."
+    required: false
+    default: ""
+  checksum:
+    description: "A file to contain checksums for all binaries."
+    required: false
+    default: "checksums.txt"
 
 runs:
   using: "node20"

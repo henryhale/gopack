@@ -18,7 +18,15 @@ A github action to build and package Go projects
 4. `ldflags`:
   - **description**: Value to -ldflags build option.
   - **required**: false
-    **default**: -s -w
+  - **default**: -s -w
+5. `flags`:
+  - **description**: Flags to pass to 'go build' command
+  - **required**: false
+  - **default**: ""
+6. `checksum`:
+  - **description**: A file to contain checksums for all binaries.
+  - **required**: false
+  - **default**: checksums.txt
 
 ## outputs
 
@@ -49,6 +57,8 @@ jobs:
           path: "./my-go-project"
           dest: "./dist"
           ldflags: "-s -w -X 'main.version=$(git describe --tags)'"
+          flags: "-trimpath"
+          checksum: "checksums.txt"
 
 ```
 

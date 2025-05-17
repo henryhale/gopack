@@ -3,6 +3,7 @@ import { exec } from "@actions/exec";
 import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 
 const BINARIES = [
     "linux-arm",
@@ -58,10 +59,14 @@ async function build() {
         let projectPath = core.getInput("path");
         let outputDir = core.getInput("dest");
         const ldFlags = core.getInput("ldflags");
+        const flags = core.getInput("flags");
+        const checksumFile = core.getInput("checksum");
 
         // validate the paths
         projectPath = path.resolve(projectPath);
-        outputDir = path.resolve(outputDir);
+        outputDir = path.relative(projectPath, outputDir);
+
+        process.chdir(projectPath);
 
         // build the go project
         core.info(`build: ${projectName} started...`);
@@ -76,41 +81,50 @@ async function build() {
         const projectVersion = await getLatestTagOrCommit();
 
         // start building binaries
+        const builtBinaries: string[][] = []
         for (const bin of BINARIES) {
             const [goos, goarch] = bin.split("-");
             const goarm = goarch === "arm" ? `GOARM=${GOARM_VERSION}` : "";
             const isWindows = goos === "windows";
 
-            const binName = `${projectName}-${projectVersion}-${goos}-${goarch}`;
-            const outputName = path.relative(
-                ".",
-                path.join(outputDir, binName + (isWindows ? ".exe" : "")),
-            );
-            const archiveName = path.relative(
-                ".",
-                path.join(
-                    outputDir,
-                    binName + (isWindows ? ".zip" : ".tar.gz"),
-                ),
-            );
+            const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
+            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
+            const outputName = binName + (isWindows ? ".exe" : "");
+            const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
 
             // build
             await exec(
-                `env GOOS=${goos} GOARCH=${goarch} ${goarm} go build -ldflags "${ldFlags}" -o "${outputName}"`,
+                `env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} ${goarm} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`,
             );
 
+            builtBinaries.push([outputName, archiveName])
+        }
+
+        core.info(`building complete.`);
+
+        // archive binaries
+        process.chdir(outputDir)
+
+        for (const bin of builtBinaries) {
+            const [outputName, archiveName] = bin
+
             // archive
-            if (goos === "windows") {
+            if (archiveName.endsWith(".zip")) {
                 await exec(`zip -j ${archiveName} ${outputName}`);
             } else {
                 await exec(`tar -czf ${archiveName} ${outputName}`);
             }
 
+            // append sha256 checksum to file
+            const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`)
+            await fsp.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum)
+
             // cleanup
             await fsp.rm(outputName);
         }
 
-        core.info(`build and packaging complete.`);
+        process.chdir(projectPath);
+
         core.info(`artifacts in ${outputDir}/`);
 
         // display binaries
