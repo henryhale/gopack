@@ -1,6 +1,6 @@
 # gopack
 
-A github action to build and package Go projects
+A personal github action to build and package Go projects.
 
 ## inputs
 
@@ -45,13 +45,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # checkout repository
+      - uses: actions/checkout@v4
 
-      # Setup Go
-      # use actions/setup-go
+      # setup go
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.24.0" # the go version to install and use
       # ...
 
       # build with go
-      - name: Build and package binaries 
+      - name: Build and package binaries
         uses: henryhale/gopack@v1.0.2
         with:
           path: "./my-go-project"
@@ -62,11 +66,7 @@ jobs:
 
 ```
 
-## notes
-
-This action does not setup Go for you, use [actions/setup-go](https://github.com/actions/setup-go) yourself.
-
-## license 
+## license
 
 Released under [MIT License](./LICENSE.txt).
 

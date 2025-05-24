@@ -1,6 +1,9 @@
 name: "gopack: build and package golang projects"
 description: "Builds and packages a golang project, outputting the binaries for multiple platforms."
 author: "Henry Hale"
+branding:
+  icon: box
+  color: yellow
 inputs:
   name:
     description: "Name of the project"
