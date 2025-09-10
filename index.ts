@@ -6,6 +6,7 @@ import path from "node:path";
 import process from "node:process";
 
 const BINARIES = [
+    "linux-386",
     "linux-arm",
     "linux-arm64",
     "linux-amd64",
@@ -14,8 +15,6 @@ const BINARIES = [
     "windows-arm64",
     "windows-amd64",
 ];
-
-const GOARM_VERSION = 7;
 
 const DEFAULT_VERSION = "v0.0.0";
 
@@ -84,7 +83,6 @@ async function build() {
         const builtBinaries: string[][] = []
         for (const bin of BINARIES) {
             const [goos, goarch] = bin.split("-");
-            const goarm = goarch === "arm" ? `GOARM=${GOARM_VERSION}` : "";
             const isWindows = goos === "windows";
 
             const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
@@ -94,7 +92,7 @@ async function build() {
 
             // build
             await exec(
-                `env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} ${goarm} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`,
+                `env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`,
             );
 
             builtBinaries.push([outputName, archiveName])
@@ -134,4 +132,4 @@ async function build() {
     }
 }
 
-build();
+await build();

@@ -25660,6 +25660,34 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:events"
 
 /***/ }),
 
+/***/ 3024:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
+
+/***/ }),
+
+/***/ 1455:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
+
+/***/ }),
+
+/***/ 6760:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
+
+/***/ }),
+
+/***/ 1708:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:process");
+
+/***/ }),
+
 /***/ 7075:
 /***/ ((module) => {
 
@@ -27383,6 +27411,117 @@ function parseParams (str) {
 module.exports = parseParams
 
 
+/***/ }),
+
+/***/ 7946:
+/***/ ((__webpack_module__, __unused_webpack___webpack_exports__, __nccwpck_require__) => {
+
+__nccwpck_require__.a(__webpack_module__, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(9999);
+/* harmony import */ var _actions_exec__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(8872);
+/* harmony import */ var node_fs__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(3024);
+/* harmony import */ var node_fs_promises__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(1455);
+/* harmony import */ var node_path__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(6760);
+/* harmony import */ var node_process__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(1708);
+
+
+
+
+
+
+const BINARIES = [
+    "linux-386",
+    "linux-arm",
+    "linux-arm64",
+    "linux-amd64",
+    "darwin-arm64",
+    "darwin-amd64",
+    "windows-arm64",
+    "windows-amd64",
+];
+const DEFAULT_VERSION = "v0.0.0";
+async function execAndExtractOutput(cmd) {
+    let result = "";
+    await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd, [], {
+        listeners: {
+            stdout(data) {
+                result += data.toString().trim();
+            },
+        },
+    });
+    return result;
+}
+async function getLatestTagOrCommit() {
+    let result = DEFAULT_VERSION;
+    try {
+        result = await execAndExtractOutput(`git describe --tags --always --abbrev=0`);
+        return result;
+    }
+    catch {
+        try {
+            result = await execAndExtractOutput(`git rev-parse --short HEAD`);
+            return result;
+        }
+        finally {
+            return result;
+        }
+    }
+}
+async function build() {
+    try {
+        let projectName = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("name");
+        let projectPath = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("path");
+        let outputDir = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("dest");
+        const ldFlags = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("ldflags");
+        const flags = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("flags");
+        const checksumFile = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("checksum");
+        projectPath = node_path__WEBPACK_IMPORTED_MODULE_4__.resolve(projectPath);
+        outputDir = node_path__WEBPACK_IMPORTED_MODULE_4__.relative(projectPath, outputDir);
+        node_process__WEBPACK_IMPORTED_MODULE_5__.chdir(projectPath);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`build: ${projectName} started...`);
+        if (!node_fs__WEBPACK_IMPORTED_MODULE_2__.existsSync(outputDir)) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`creating output directory: ${outputDir}`);
+            node_fs__WEBPACK_IMPORTED_MODULE_2__.mkdirSync(outputDir, { recursive: true });
+        }
+        const projectVersion = await getLatestTagOrCommit();
+        const builtBinaries = [];
+        for (const bin of BINARIES) {
+            const [goos, goarch] = bin.split("-");
+            const isWindows = goos === "windows";
+            const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
+            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
+            const outputName = binName + (isWindows ? ".exe" : "");
+            const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
+            await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`);
+            builtBinaries.push([outputName, archiveName]);
+        }
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`building complete.`);
+        node_process__WEBPACK_IMPORTED_MODULE_5__.chdir(outputDir);
+        for (const bin of builtBinaries) {
+            const [outputName, archiveName] = bin;
+            if (archiveName.endsWith(".zip")) {
+                await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`zip -j ${archiveName} ${outputName}`);
+            }
+            else {
+                await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`tar -czf ${archiveName} ${outputName}`);
+            }
+            const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`);
+            await node_fs_promises__WEBPACK_IMPORTED_MODULE_3__.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum);
+            await node_fs_promises__WEBPACK_IMPORTED_MODULE_3__.rm(outputName);
+        }
+        node_process__WEBPACK_IMPORTED_MODULE_5__.chdir(projectPath);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`artifacts in ${outputDir}/`);
+        await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`ls -lh ${outputDir}`);
+    }
+    catch (error) {
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`action failed with error: ${error}`);
+    }
+}
+await build();
+
+__webpack_async_result__();
+} catch(e) { __webpack_async_result__(e); } }, 1);
+
 /***/ })
 
 /******/ });
@@ -27418,120 +27557,84 @@ module.exports = parseParams
 /******/ }
 /******/ 
 /************************************************************************/
+/******/ /* webpack/runtime/async module */
+/******/ (() => {
+/******/ 	var webpackQueues = typeof Symbol === "function" ? Symbol("webpack queues") : "__webpack_queues__";
+/******/ 	var webpackExports = typeof Symbol === "function" ? Symbol("webpack exports") : "__webpack_exports__";
+/******/ 	var webpackError = typeof Symbol === "function" ? Symbol("webpack error") : "__webpack_error__";
+/******/ 	var resolveQueue = (queue) => {
+/******/ 		if(queue && queue.d < 1) {
+/******/ 			queue.d = 1;
+/******/ 			queue.forEach((fn) => (fn.r--));
+/******/ 			queue.forEach((fn) => (fn.r-- ? fn.r++ : fn()));
+/******/ 		}
+/******/ 	}
+/******/ 	var wrapDeps = (deps) => (deps.map((dep) => {
+/******/ 		if(dep !== null && typeof dep === "object") {
+/******/ 			if(dep[webpackQueues]) return dep;
+/******/ 			if(dep.then) {
+/******/ 				var queue = [];
+/******/ 				queue.d = 0;
+/******/ 				dep.then((r) => {
+/******/ 					obj[webpackExports] = r;
+/******/ 					resolveQueue(queue);
+/******/ 				}, (e) => {
+/******/ 					obj[webpackError] = e;
+/******/ 					resolveQueue(queue);
+/******/ 				});
+/******/ 				var obj = {};
+/******/ 				obj[webpackQueues] = (fn) => (fn(queue));
+/******/ 				return obj;
+/******/ 			}
+/******/ 		}
+/******/ 		var ret = {};
+/******/ 		ret[webpackQueues] = x => {};
+/******/ 		ret[webpackExports] = dep;
+/******/ 		return ret;
+/******/ 	}));
+/******/ 	__nccwpck_require__.a = (module, body, hasAwait) => {
+/******/ 		var queue;
+/******/ 		hasAwait && ((queue = []).d = -1);
+/******/ 		var depQueues = new Set();
+/******/ 		var exports = module.exports;
+/******/ 		var currentDeps;
+/******/ 		var outerResolve;
+/******/ 		var reject;
+/******/ 		var promise = new Promise((resolve, rej) => {
+/******/ 			reject = rej;
+/******/ 			outerResolve = resolve;
+/******/ 		});
+/******/ 		promise[webpackExports] = exports;
+/******/ 		promise[webpackQueues] = (fn) => (queue && fn(queue), depQueues.forEach(fn), promise["catch"](x => {}));
+/******/ 		module.exports = promise;
+/******/ 		body((deps) => {
+/******/ 			currentDeps = wrapDeps(deps);
+/******/ 			var fn;
+/******/ 			var getResult = () => (currentDeps.map((d) => {
+/******/ 				if(d[webpackError]) throw d[webpackError];
+/******/ 				return d[webpackExports];
+/******/ 			}))
+/******/ 			var promise = new Promise((resolve) => {
+/******/ 				fn = () => (resolve(getResult));
+/******/ 				fn.r = 0;
+/******/ 				var fnQueue = (q) => (q !== queue && !depQueues.has(q) && (depQueues.add(q), q && !q.d && (fn.r++, q.push(fn))));
+/******/ 				currentDeps.map((dep) => (dep[webpackQueues](fnQueue)));
+/******/ 			});
+/******/ 			return fn.r ? promise : getResult();
+/******/ 		}, (err) => ((err ? reject(promise[webpackError] = err) : outerResolve(exports)), resolveQueue(queue)));
+/******/ 		queue && queue.d < 0 && (queue.d = 0);
+/******/ 	};
+/******/ })();
+/******/ 
 /******/ /* webpack/runtime/compat */
 /******/ 
 /******/ if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = new URL('.', import.meta.url).pathname.slice(import.meta.url.match(/^file:\/\/\/\w:/) ? 1 : 0, -1) + "/";
 /******/ 
 /************************************************************************/
-var __webpack_exports__ = {};
-
-// EXTERNAL MODULE: ./node_modules/.pnpm/@actions+core@1.11.1/node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(9999);
-// EXTERNAL MODULE: ./node_modules/.pnpm/@actions+exec@1.1.1/node_modules/@actions/exec/lib/exec.js
-var exec = __nccwpck_require__(8872);
-;// CONCATENATED MODULE: external "node:fs"
-const external_node_fs_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs");
-;// CONCATENATED MODULE: external "node:fs/promises"
-const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:fs/promises");
-;// CONCATENATED MODULE: external "node:path"
-const external_node_path_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:path");
-;// CONCATENATED MODULE: external "node:process"
-const external_node_process_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:process");
-;// CONCATENATED MODULE: ./out/index.js
-
-
-
-
-
-
-const BINARIES = [
-    "linux-arm",
-    "linux-arm64",
-    "linux-amd64",
-    "darwin-arm64",
-    "darwin-amd64",
-    "windows-arm64",
-    "windows-amd64",
-];
-const GOARM_VERSION = 7;
-const DEFAULT_VERSION = "v0.0.0";
-async function execAndExtractOutput(cmd) {
-    let result = "";
-    await (0,exec.exec)(cmd, [], {
-        listeners: {
-            stdout(data) {
-                result += data.toString().trim();
-            },
-        },
-    });
-    return result;
-}
-async function getLatestTagOrCommit() {
-    let result = DEFAULT_VERSION;
-    try {
-        result = await execAndExtractOutput(`git describe --tags --always --abbrev=0`);
-        return result;
-    }
-    catch {
-        try {
-            result = await execAndExtractOutput(`git rev-parse --short HEAD`);
-            return result;
-        }
-        finally {
-            return result;
-        }
-    }
-}
-async function build() {
-    try {
-        let projectName = core.getInput("name");
-        let projectPath = core.getInput("path");
-        let outputDir = core.getInput("dest");
-        const ldFlags = core.getInput("ldflags");
-        const flags = core.getInput("flags");
-        const checksumFile = core.getInput("checksum");
-        projectPath = external_node_path_namespaceObject.resolve(projectPath);
-        outputDir = external_node_path_namespaceObject.relative(projectPath, outputDir);
-        external_node_process_namespaceObject.chdir(projectPath);
-        core.info(`build: ${projectName} started...`);
-        if (!external_node_fs_namespaceObject.existsSync(outputDir)) {
-            core.info(`creating output directory: ${outputDir}`);
-            external_node_fs_namespaceObject.mkdirSync(outputDir, { recursive: true });
-        }
-        const projectVersion = await getLatestTagOrCommit();
-        const builtBinaries = [];
-        for (const bin of BINARIES) {
-            const [goos, goarch] = bin.split("-");
-            const goarm = goarch === "arm" ? `GOARM=${GOARM_VERSION}` : "";
-            const isWindows = goos === "windows";
-            const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
-            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
-            const outputName = binName + (isWindows ? ".exe" : "");
-            const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
-            await (0,exec.exec)(`env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} ${goarm} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`);
-            builtBinaries.push([outputName, archiveName]);
-        }
-        core.info(`building complete.`);
-        external_node_process_namespaceObject.chdir(outputDir);
-        for (const bin of builtBinaries) {
-            const [outputName, archiveName] = bin;
-            if (archiveName.endsWith(".zip")) {
-                await (0,exec.exec)(`zip -j ${archiveName} ${outputName}`);
-            }
-            else {
-                await (0,exec.exec)(`tar -czf ${archiveName} ${outputName}`);
-            }
-            const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`);
-            await promises_namespaceObject.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum);
-            await promises_namespaceObject.rm(outputName);
-        }
-        external_node_process_namespaceObject.chdir(projectPath);
-        core.info(`artifacts in ${outputDir}/`);
-        await (0,exec.exec)(`ls -lh ${outputDir}`);
-    }
-    catch (error) {
-        core.setFailed(`action failed with error: ${error}`);
-    }
-}
-build();
-
+/******/ 
+/******/ // startup
+/******/ // Load entry module and return exports
+/******/ // This entry module used 'module' so it can't be inlined
+/******/ var __webpack_exports__ = __nccwpck_require__(7946);
+/******/ __webpack_exports__ = await __webpack_exports__;
+/******/ 
