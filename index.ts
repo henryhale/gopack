@@ -60,7 +60,7 @@ async function build() {
         const ldFlags = core.getInput("ldflags");
         const flags = core.getInput("flags");
         const checksumFile = core.getInput("checksum");
-        const includeVersion = !!core.getInput("includeVersion");
+        const includeVersion = core.getInput("includeVersion") === 'true';
 
         // validate the paths
         projectPath = path.resolve(projectPath);
@@ -78,7 +78,7 @@ async function build() {
         }
 
         // get project version
-        const projectVersion = await getLatestTagOrCommit();
+        const projectVersion = includeVersion ? await getLatestTagOrCommit() : '';
 
         // start building binaries
         const builtBinaries: string[][] = []

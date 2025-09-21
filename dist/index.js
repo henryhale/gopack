@@ -27439,7 +27439,6 @@ const BINARIES = [
     "windows-arm64",
     "windows-amd64",
 ];
-const DEFAULT_VERSION = "v0.0.0";
 async function execAndExtractOutput(cmd) {
     let result = "";
     await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(cmd, [], {
@@ -27451,6 +27450,7 @@ async function execAndExtractOutput(cmd) {
     });
     return result;
 }
+const DEFAULT_VERSION = "v0.0.0";
 async function getLatestTagOrCommit() {
     let result = DEFAULT_VERSION;
     try {
@@ -27475,6 +27475,7 @@ async function build() {
         const ldFlags = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("ldflags");
         const flags = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("flags");
         const checksumFile = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("checksum");
+        const includeVersion = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput("includeVersion") === 'true';
         projectPath = node_path__WEBPACK_IMPORTED_MODULE_4__.resolve(projectPath);
         outputDir = node_path__WEBPACK_IMPORTED_MODULE_4__.relative(projectPath, outputDir);
         node_process__WEBPACK_IMPORTED_MODULE_5__.chdir(projectPath);
@@ -27483,13 +27484,13 @@ async function build() {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`creating output directory: ${outputDir}`);
             node_fs__WEBPACK_IMPORTED_MODULE_2__.mkdirSync(outputDir, { recursive: true });
         }
-        const projectVersion = await getLatestTagOrCommit();
+        const projectVersion = includeVersion ? await getLatestTagOrCommit() : '';
         const builtBinaries = [];
         for (const bin of BINARIES) {
             const [goos, goarch] = bin.split("-");
             const isWindows = goos === "windows";
             const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
-            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
+            const binName = `${projectName}${includeVersion ? '_' + projectVersion : ''}_${goos}_${archName}`;
             const outputName = binName + (isWindows ? ".exe" : "");
             const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
             await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`env CGO_ENABLED=0 GOOS=${goos} GOARCH=${goarch} go build ${flags} -ldflags "${ldFlags}" -o "${outputDir}/${outputName}"`);
@@ -27506,15 +27507,15 @@ async function build() {
                 await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`tar -czf ${archiveName} ${outputName}`);
             }
             const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`);
-            await node_fs_promises__WEBPACK_IMPORTED_MODULE_3__.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum);
+            await node_fs_promises__WEBPACK_IMPORTED_MODULE_3__.appendFile(`${projectName}${includeVersion ? '_' + projectVersion : ''}_${checksumFile}`, checksum);
             await node_fs_promises__WEBPACK_IMPORTED_MODULE_3__.rm(outputName);
         }
         node_process__WEBPACK_IMPORTED_MODULE_5__.chdir(projectPath);
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`artifacts in ${outputDir}/`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Artifacts in ${outputDir}/`);
         await (0,_actions_exec__WEBPACK_IMPORTED_MODULE_1__.exec)(`ls -lh ${outputDir}`);
     }
     catch (error) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`action failed with error: ${error}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`Action failed with error: ${error}`);
     }
 }
 await build();

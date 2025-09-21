@@ -1,7 +1,7 @@
 {
   "name": "gopack",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Builds and packages a golang project, outputting the binaries for multiple platforms.",
   "main": "dist/index.js",
   "type": "module",

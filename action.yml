@@ -31,7 +31,7 @@ inputs:
   includeVersion:
     description: "Whether to add current tag or commit in release name."
     required: false
-    default: false
+    default: "false"
 
 runs:
   using: "node20"
