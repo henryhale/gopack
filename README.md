@@ -27,6 +27,10 @@ A personal github action to build and package Go projects.
   - **description**: A file to contain checksums for all binaries.
   - **required**: false
   - **default**: checksums.txt
+7. `includeVersion`:
+  - **description**: Whether or not to add the current tag or commit in release name.
+  - **required**: false
+  - **default**: false
 
 ## outputs
 
@@ -56,7 +60,7 @@ jobs:
 
       # build with go
       - name: Build and package binaries
-        uses: henryhale/gopack@v1.0.2
+        uses: henryhale/gopack@v1.0.3
         with:
           path: "./my-go-project"
           dest: "./dist"

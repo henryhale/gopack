@@ -28,6 +28,10 @@ inputs:
     description: "A file to contain checksums for all binaries."
     required: false
     default: "checksums.txt"
+  includeVersion:
+    description: "Whether to add current tag or commit in release name."
+    required: false
+    default: false
 
 runs:
   using: "node20"

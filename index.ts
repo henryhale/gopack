@@ -16,8 +16,6 @@ const BINARIES = [
     "windows-amd64",
 ];
 
-const DEFAULT_VERSION = "v0.0.0";
-
 async function execAndExtractOutput(cmd: string) {
     let result: string = "";
 
@@ -31,6 +29,8 @@ async function execAndExtractOutput(cmd: string) {
 
     return result;
 }
+
+const DEFAULT_VERSION = "v0.0.0";
 
 async function getLatestTagOrCommit() {
     let result: string = DEFAULT_VERSION;
@@ -60,6 +60,7 @@ async function build() {
         const ldFlags = core.getInput("ldflags");
         const flags = core.getInput("flags");
         const checksumFile = core.getInput("checksum");
+        const includeVersion = !!core.getInput("includeVersion");
 
         // validate the paths
         projectPath = path.resolve(projectPath);
@@ -86,7 +87,7 @@ async function build() {
             const isWindows = goos === "windows";
 
             const archName = goarch === "amd64" ? "x86_64" : goarch === "386" ? "i386" : goarch;
-            const binName = `${projectName}_${projectVersion}_${goos}_${archName}`;
+            const binName = `${projectName}${includeVersion ? '_' + projectVersion : ''}_${goos}_${archName}`;
             const outputName = binName + (isWindows ? ".exe" : "");
             const archiveName = binName + (isWindows ? ".zip" : ".tar.gz");
 
@@ -115,7 +116,7 @@ async function build() {
 
             // append sha256 checksum to file
             const checksum = await execAndExtractOutput(`sha256sum ${archiveName}`)
-            await fsp.appendFile(`${projectName}_${projectVersion}_${checksumFile}`, checksum)
+            await fsp.appendFile(`${projectName}${includeVersion ? '_' + projectVersion : ''}_${checksumFile}`, checksum)
 
             // cleanup
             await fsp.rm(outputName);
@@ -123,12 +124,12 @@ async function build() {
 
         process.chdir(projectPath);
 
-        core.info(`artifacts in ${outputDir}/`);
+        core.info(`Artifacts in ${outputDir}/`);
 
         // display binaries
         await exec(`ls -lh ${outputDir}`);
     } catch (error) {
-        core.setFailed(`action failed with error: ${error}`);
+        core.setFailed(`Action failed with error: ${error}`);
     }
 }
 
