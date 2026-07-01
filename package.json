@@ -15,14 +15,14 @@
     "url": "https://github.com/henryhale"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@11.9.0",
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/exec": "^1.1.1"
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "@vercel/ncc": "^0.38.3",
-    "typescript": "^5.8.3"
+    "@types/node": "^26.1.0",
+    "@vercel/ncc": "^0.44.1",
+    "typescript": "^6.0.3"
   }
 }

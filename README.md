@@ -23,18 +23,21 @@ A personal github action to build and package Go projects.
   - **description**: Flags to pass to 'go build' command
   - **required**: false
   - **default**: ""
-6. `checksum`:
-  - **description**: A file to contain checksums for all binaries.
-  - **required**: false
-  - **default**: checksums.txt
-7. `includeVersion`:
+6. `includeVersion`:
   - **description**: Whether or not to add the current tag or commit in release name.
   - **required**: false
   - **default**: false
 
 ## outputs
 
-The built binaries are located under the `output` directory.
+1. `directory`:
+  - **description**: Absolute path to the directory containing the packaged archives.
+2. `artifacts`:
+  - **description**: Newline-separated list of the packaged archive file names.
+
+The packaged archives (`.tar.gz` / `.zip`) are written to the `dest` directory.
+Checksums are no longer generated — GitHub produces them automatically when the
+archives are uploaded as release assets.
 
 ## usage
 
@@ -64,9 +67,9 @@ jobs:
         with:
           path: "./my-go-project"
           dest: "./dist"
-          ldflags: "-s -w -X 'main.version=$(git describe --tags)'"
+          ldflags: "-s -w"
           flags: "-trimpath"
-          checksum: "checksums.txt"
+          includeVersion: "true"
 
 ```
 
