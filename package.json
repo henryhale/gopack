@@ -14,7 +14,7 @@
     "name": "Henry Hale",
     "url": "https://github.com/henryhale"
   },
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@11.9.0",
   "dependencies": {
     "@actions/core": "^3.0.1",
