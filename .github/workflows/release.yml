@@ -22,3 +22,9 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move the major tag
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git tag -f "$major"
+          git push -f origin "$major"
