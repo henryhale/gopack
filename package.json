@@ -8,21 +8,21 @@
   "scripts": {
     "build": "tsc -b && ncc build out/index.js -o dist",
     "release": "pnpm build && git add . && git commit -m \"build: update dist bundle\" && git push",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "author": {
     "name": "Henry Hale",
     "url": "https://github.com/henryhale"
   },
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@11.9.0",
   "dependencies": {
     "@actions/core": "^3.0.1",
     "@actions/exec": "^3.0.0"
   },
   "devDependencies": {
-    "@types/node": "^26.1.0",
-    "@vercel/ncc": "^0.44.1",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.4.1",
+    "@vercel/ncc": "^0.45.0",
+    "typescript": "^7.0.2"
   }
 }

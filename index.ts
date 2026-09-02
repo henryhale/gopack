@@ -48,6 +48,41 @@ async function resolveVersion(): Promise<string> {
   return DEFAULT_VERSION;
 }
 
+/** Fail fast with an actionable message when `path` holds no buildable main package. */
+async function assertMainPackage(projectPath: string): Promise<void> {
+  if (!fs.existsSync(projectPath)) {
+    throw new Error(
+      `path not found: ${projectPath} (is the repository checked out before this step?)`,
+    );
+  }
+
+  const target = await getExecOutput("go", ["list", "-f", "{{.Name}}", "."], {
+    cwd: projectPath,
+    silent: true,
+    ignoreReturnCode: true,
+  });
+  if (target.exitCode === 0 && target.stdout.trim() === "main") return;
+
+  // let the go tool report where the main packages actually live
+  const found = await getExecOutput(
+    "go",
+    ["list", "-f", '{{if eq .Name "main"}}{{.Dir}}{{end}}', "./..."],
+    { cwd: projectPath, silent: true, ignoreReturnCode: true },
+  );
+  const candidates = found.stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((dir) => `./${path.relative(projectPath, dir)}`);
+
+  const hint = candidates.length
+    ? `set the 'path' input to the directory holding it, e.g. '${candidates[0]}'`
+    : target.stderr.trim() ||
+      "check the 'path' input and that the project is a Go module";
+
+  throw new Error(`no main package in ${projectPath}: ${hint}`);
+}
+
 interface BuildOptions {
   projectName: string;
   projectPath: string;
@@ -127,6 +162,9 @@ async function run(): Promise<void> {
     core.info(
       `build: ${[projectName, version].filter(Boolean).join(" ")} started...`,
     );
+
+    // fail before fanning out eight builds that would all report the same thing
+    await assertMainPackage(projectPath);
 
     // ensure the output directory exists
     fs.mkdirSync(outputDir, { recursive: true });
